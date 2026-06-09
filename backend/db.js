@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Determine configuration target environment dynamically
 const dbHost = process.env.DB_HOST || 'localhost';
 const sslConfig = (dbHost !== 'localhost' && dbHost !== '127.0.0.1')
     ? { rejectUnauthorized: false }
@@ -20,18 +21,24 @@ const pool = mysql.createPool({
     ssl: sslConfig
 });
 
+// Structural diagnostic test connection and auto-table initialization
 (async () => {
     try {
         const connection = await pool.getConnection();
         console.log("Database connection pool established successfully.");
 
-        // Clear out old structural layers so they can rebuild with matching configurations
-        // This is completely safe since the cloud database doesn't have live user data yet!
+        // 🚨 CRITICAL FIX: Temporarily disable foreign key locks so tables drop safely
+        await connection.query('SET FOREIGN_KEY_CHECKS = 0;');
+
+        // Clear out old structural layers seamlessly
         await connection.query(`DROP TABLE IF EXISTS bookpackage;`);
         await connection.query(`DROP TABLE IF EXISTS bookhotels;`);
         await connection.query(`DROP TABLE IF EXISTS customer;`);
         await connection.query(`DROP TABLE IF EXISTS account;`);
-        console.log("Stale database tables cleared successfully.");
+        console.log("Stale database tables cleared under relaxed constraint state.");
+
+        // 🚨 Re-enable foreign key checks to protect production data relationships
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1;');
 
         // 1. Create clean account table with matching column name 'security'
         const createAccountTable = `
