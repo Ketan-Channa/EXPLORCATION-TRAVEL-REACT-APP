@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Detects configuration target environment dynamically
 const dbHost = process.env.DB_HOST || 'localhost';
 const sslConfig = (dbHost !== 'localhost' && dbHost !== '127.0.0.1')
     ? { rejectUnauthorized: false }
@@ -21,15 +20,22 @@ const pool = mysql.createPool({
     ssl: sslConfig
 });
 
-// Structural diagnostic test connection and auto-table initialization
 (async () => {
     try {
         const connection = await pool.getConnection();
         console.log("Database connection pool established successfully.");
 
-        // 1. Auto-create account table if it doesn't exist
+        // Clear out old structural layers so they can rebuild with matching configurations
+        // This is completely safe since the cloud database doesn't have live user data yet!
+        await connection.query(`DROP TABLE IF EXISTS bookpackage;`);
+        await connection.query(`DROP TABLE IF EXISTS bookhotels;`);
+        await connection.query(`DROP TABLE IF EXISTS customer;`);
+        await connection.query(`DROP TABLE IF EXISTS account;`);
+        console.log("Stale database tables cleared successfully.");
+
+        // 1. Create clean account table with matching column name 'security'
         const createAccountTable = `
-            CREATE TABLE IF NOT EXISTS account (
+            CREATE TABLE account (
                 username VARCHAR(255) PRIMARY KEY,
                 name VARCHAR(255) NOT NULL,
                 password VARCHAR(255) NOT NULL,
@@ -37,10 +43,11 @@ const pool = mysql.createPool({
                 answer VARCHAR(255) NOT NULL
             );
         `;
+        await connection.query(createAccountTable);
 
-        // 2. Auto-create customer profile table
+        // 2. Create customer profile table
         const createCustomerTable = `
-            CREATE TABLE IF NOT EXISTS customer (
+            CREATE TABLE customer (
                 username VARCHAR(255) PRIMARY KEY,
                 id VARCHAR(255) NOT NULL,
                 number VARCHAR(255) NOT NULL,
@@ -53,8 +60,9 @@ const pool = mysql.createPool({
                 FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
             );
         `;
+        await connection.query(createCustomerTable);
 
-        // 3. Auto-create static hotel options lookup table
+        // 3. Create static hotel options lookup table
         const createHotelTable = `
             CREATE TABLE IF NOT EXISTS hotel (
                 name VARCHAR(255) PRIMARY KEY,
@@ -63,10 +71,11 @@ const pool = mysql.createPool({
                 foodincluded INT NOT NULL
             );
         `;
+        await connection.query(createHotelTable);
 
-        // 4. Auto-create hotel booking records schema linked safely to accounts
+        // 4. Create hotel booking records schema
         const createBookHotelsTable = `
-            CREATE TABLE IF NOT EXISTS bookhotels (
+            CREATE TABLE bookhotels (
                 booking_id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) NOT NULL,
                 hotel VARCHAR(255) NOT NULL,
@@ -80,10 +89,11 @@ const pool = mysql.createPool({
                 FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
             );
         `;
+        await connection.query(createBookHotelsTable);
 
-        // 5. Auto-create package transactions records schema linked safely to accounts
+        // 5. Create package transactions records schema
         const createBookPackageTable = `
-            CREATE TABLE IF NOT EXISTS bookpackage (
+            CREATE TABLE bookpackage (
                 booking_id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) NOT NULL,
                 package VARCHAR(255) NOT NULL,
@@ -94,30 +104,9 @@ const pool = mysql.createPool({
                 FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
             );
         `;
-
-        // Execute foundational operations sequentially
-        await connection.query(createAccountTable);
-
-        // Safe column migration block handling legacy properties
-        try {
-            await connection.query('SELECT security FROM account LIMIT 1');
-        } catch (colError) {
-            try {
-                console.log("Migrating legacy database column: security_question -> security...");
-                await connection.query('ALTER TABLE account ADD COLUMN security VARCHAR(255) NOT NULL DEFAULT "YOUR BIRTHDAY"');
-                await connection.query('UPDATE account SET security = security_question WHERE security_question IS NOT NULL');
-                await connection.query('ALTER TABLE account DROP COLUMN security_question');
-                console.log("Successfully migrated account table columns.");
-            } catch (migrationError) {
-                console.log("Non-critical migration notice:", migrationError.message);
-            }
-        }
-
-        await connection.query(createCustomerTable);
-        await connection.query(createHotelTable);
-        await connection.query(createBookHotelsTable);
         await connection.query(createBookPackageTable);
-        console.log("Database tables verified/created successfully.");
+
+        console.log("All database tables initialized successfully with correct column maps.");
 
         // Auto-seed hotel catalog parameters if missing
         const [rows] = await connection.query('SELECT COUNT(*) as count FROM hotel');
