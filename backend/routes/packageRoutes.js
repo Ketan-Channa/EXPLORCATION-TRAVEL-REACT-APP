@@ -20,7 +20,7 @@ router.get('/customer/:username', async (req, res) => {
 // 2. BOOK ENDPOINT: Replaces the insert transaction inside BookPackage.java
 router.post('/book', async (req, res) => {
     const { username, packageName, totalPeople, idType, phone, totalPrice } = req.body;
-    
+
     if (!username || !packageName || !totalPeople || !idType || !phone || !totalPrice) {
         return res.status(400).json({ error: 'All parameters are required to process tour bookings.' });
     }
@@ -49,5 +49,32 @@ router.get('/booked/:username', async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error fetching itinerary.' });
     }
 });
+
+// Structural auto-initialization schema layer for package bookings
+(async () => {
+    try {
+        const connection = await pool.getConnection();
+
+        // Create booking transaction table schema with an auto-incrementing ID primary key
+        const createPackageTableQuery = `
+            CREATE TABLE IF NOT EXISTS bookpackage (
+                booking_id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) NOT NULL,
+                package VARCHAR(255) NOT NULL,
+                people INT NOT NULL,
+                id VARCHAR(255) NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                price VARCHAR(255) NOT NULL,
+                FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
+            );
+        `;
+
+        await connection.query(createPackageTableQuery);
+        console.log("Package transaction schemas verified securely in Aiven Cloud.");
+        connection.release();
+    } catch (error) {
+        console.error("Package table migration breakdown:", error.message);
+    }
+})();
 
 export default router;

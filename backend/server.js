@@ -23,7 +23,13 @@ app.get('/', (req, res) => {
     res.send('Travel Management System Server API is running smoothly.');
 });
 
-// Start listening for inbound connection requests on Port 5000
+// Centralized production runtime error interception layer
+app.use((err, req, res, next) => {
+    console.error("Uncaught runtime server exception context:", err.stack);
+    res.status(500).json({ error: 'Internal system dispatch error occurrence.' });
+});
+
+// Start listening for inbound connection requests on the designated Port
 app.listen(PORT, () => {
     console.log(`Server is successfully running on port ${PORT}`);
 });

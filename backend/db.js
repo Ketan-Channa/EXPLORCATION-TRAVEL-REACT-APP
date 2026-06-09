@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Replaces your legacy DriverManager connection with a thread-safe connection pool linked to Aiven Cloud
+// Detects configuration target environment dynamically
 const dbHost = process.env.DB_HOST || 'localhost';
 const sslConfig = (dbHost !== 'localhost' && dbHost !== '127.0.0.1')
     ? { rejectUnauthorized: false }
@@ -27,7 +27,7 @@ const pool = mysql.createPool({
         const connection = await pool.getConnection();
         console.log("Database connection pool established successfully.");
 
-        // Auto-create account table if it doesn't exist in your cloud database
+        // 1. Auto-create account table if it doesn't exist
         const createAccountTable = `
             CREATE TABLE IF NOT EXISTS account (
                 username VARCHAR(255) PRIMARY KEY,
@@ -38,7 +38,7 @@ const pool = mysql.createPool({
             );
         `;
 
-        // Auto-create customer table
+        // 2. Auto-create customer profile table
         const createCustomerTable = `
             CREATE TABLE IF NOT EXISTS customer (
                 username VARCHAR(255) PRIMARY KEY,
@@ -54,7 +54,7 @@ const pool = mysql.createPool({
             );
         `;
 
-        // Auto-create hotel table
+        // 3. Auto-create static hotel options lookup table
         const createHotelTable = `
             CREATE TABLE IF NOT EXISTS hotel (
                 name VARCHAR(255) PRIMARY KEY,
@@ -64,7 +64,7 @@ const pool = mysql.createPool({
             );
         `;
 
-        // Auto-create bookhotels table
+        // 4. Auto-create hotel booking records schema linked safely to accounts
         const createBookHotelsTable = `
             CREATE TABLE IF NOT EXISTS bookhotels (
                 booking_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -76,11 +76,12 @@ const pool = mysql.createPool({
                 id VARCHAR(255) NOT NULL,
                 number VARCHAR(255) NOT NULL,
                 phone VARCHAR(50) NOT NULL,
-                price VARCHAR(255) NOT NULL
+                price VARCHAR(255) NOT NULL,
+                FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
             );
         `;
 
-        // Auto-create bookpackage table
+        // 5. Auto-create package transactions records schema linked safely to accounts
         const createBookPackageTable = `
             CREATE TABLE IF NOT EXISTS bookpackage (
                 booking_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -89,13 +90,15 @@ const pool = mysql.createPool({
                 people INT NOT NULL,
                 id VARCHAR(255) NOT NULL,
                 phone VARCHAR(50) NOT NULL,
-                price VARCHAR(255) NOT NULL
+                price VARCHAR(255) NOT NULL,
+                FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
             );
         `;
 
+        // Execute foundational operations sequentially
         await connection.query(createAccountTable);
 
-        // Safe column migration for legacy account table
+        // Safe column migration block handling legacy properties
         try {
             await connection.query('SELECT security FROM account LIMIT 1');
         } catch (colError) {
@@ -116,7 +119,7 @@ const pool = mysql.createPool({
         await connection.query(createBookPackageTable);
         console.log("Database tables verified/created successfully.");
 
-        // Auto-seed hotel options if empty
+        // Auto-seed hotel catalog parameters if missing
         const [rows] = await connection.query('SELECT COUNT(*) as count FROM hotel');
         if (rows[0].count === 0) {
             const seedQuery = `

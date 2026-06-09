@@ -59,12 +59,40 @@ router.delete('/delete/:username', async (req, res) => {
         await pool.query('DELETE FROM bookpackage WHERE username = ?', [username]);
         await pool.query('DELETE FROM bookhotels WHERE username = ?', [username]);
         await pool.query('DELETE FROM account WHERE username = ?', [username]);
-        
+
         res.json({ message: 'DATA DELETED SUCCESSFULLY' });
     } catch (error) {
         console.error("Error handling cascade customer account erasure:", error.message);
         res.status(500).json({ error: 'Server processing failure deleting profile data layers.' });
     }
 });
+
+// Auto-table initialization block for the customer profile layer
+(async () => {
+    try {
+        const connection = await pool.getConnection();
+
+        const createCustomerTableQuery = `
+            CREATE TABLE IF NOT EXISTS customer (
+                username VARCHAR(255) PRIMARY KEY,
+                id VARCHAR(255) NOT NULL,
+                number VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                gender VARCHAR(50) NOT NULL,
+                country VARCHAR(255) NOT NULL,
+                address TEXT NOT NULL,
+                phone VARCHAR(50) NOT NULL,
+                email VARCHAR(255) NOT NULL,
+                FOREIGN KEY (username) REFERENCES account(username) ON DELETE CASCADE
+            );
+        `;
+
+        await connection.query(createCustomerTableQuery);
+        console.log("Customer table verified/created safely in Aiven Cloud.");
+        connection.release();
+    } catch (error) {
+        console.error("Customer table migration breakdown:", error.message);
+    }
+})();
 
 export default router;
