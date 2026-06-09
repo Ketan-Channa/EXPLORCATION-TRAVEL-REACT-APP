@@ -6,7 +6,7 @@ import hotelRoutes from './routes/hotelRoutes.js';
 import packageRoutes from './routes/packageRoutes.js';
 
 const app = express();
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Replaces raw networking setups with standardized cross-origin allowances
 app.use(cors());

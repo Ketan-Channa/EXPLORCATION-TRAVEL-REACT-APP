@@ -26,7 +26,7 @@ router.post('/book', async (req, res) => {
 router.get('/booked/:username', async (req, res) => {
     try {
         const { username } = req.params;
-        const [rows] = await pool.query('SELECT * FROM bookhotels WHERE username = ? ORDER BY id DESC LIMIT 1', [username]);
+        const [rows] = await pool.query('SELECT * FROM bookhotels WHERE username = ? ORDER BY booking_id DESC LIMIT 1', [username]);
         
         if (rows.length === 0) {
             return res.status(404).json({ error: 'No booked hotel records found for this user account.' });

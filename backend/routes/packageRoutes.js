@@ -39,7 +39,7 @@ router.post('/book', async (req, res) => {
 // 3. VIEW ENDPOINT: Replaces the selector query inside ViewPackage.java
 router.get('/booked/:username', async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM bookpackage WHERE username = ? ORDER BY id DESC LIMIT 1', [req.params.username]);
+        const [rows] = await pool.query('SELECT * FROM bookpackage WHERE username = ? ORDER BY booking_id DESC LIMIT 1', [req.params.username]);
         if (rows.length === 0) {
             return res.status(404).json({ error: 'No active vacation packages booked under this account yet.' });
         }

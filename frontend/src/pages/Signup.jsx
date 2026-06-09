@@ -22,9 +22,12 @@ function Signup({ setView }) {
     setLoading(true);
     const payload = { username, name, password, security, answer };
 
-    axios.post('http://localhost:5000/api/auth/signup', payload)
+    // Dynamically uses your Vercel Environment Variable, falling back to localhost for local testing
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+    axios.post(`${API_BASE_URL}/api/auth/signup`, payload)
       .then((res) => {
-        alert(res.data.message); 
+        alert(res.data.message);
         setView('login');
       })
       .catch((err) => {
@@ -57,7 +60,7 @@ function Signup({ setView }) {
         minHeight: '520px',
         border: '1px solid var(--border-color)'
       }}>
-        
+
         {/* Left Input Form Panel */}
         <div style={{
           padding: '48px 56px',
@@ -72,17 +75,17 @@ function Signup({ setView }) {
           </div>
 
           <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
+
             {/* Username */}
             <div className="form-group" style={{ marginBottom: '12px' }}>
               <label className="form-label">Username</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <User size={18} style={{ position: 'absolute', left: '16px', color: 'var(--slate-400)' }} />
-                <input 
-                  type="text" 
-                  value={username} 
-                  onChange={(e) => setUsername(e.target.value)} 
-                  required 
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
                   placeholder="Choose username"
                   className="form-input"
                   style={{ paddingLeft: '44px' }}
@@ -95,11 +98,11 @@ function Signup({ setView }) {
               <label className="form-label">Full Name</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Mail size={18} style={{ position: 'absolute', left: '16px', color: 'var(--slate-400)' }} />
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  required 
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
                   placeholder="Enter full name"
                   className="form-input"
                   style={{ paddingLeft: '44px' }}
@@ -112,11 +115,11 @@ function Signup({ setView }) {
               <label className="form-label">Password</label>
               <div className="password-input-container">
                 <Lock size={18} style={{ position: 'absolute', left: '16px', color: 'var(--slate-400)' }} />
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  value={password} 
-                  onChange={(e) => setPassword(e.target.value)} 
-                  required 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
                   placeholder="Set password"
                   className="form-input"
                   style={{ paddingLeft: '44px', paddingRight: '48px' }}
@@ -136,8 +139,8 @@ function Signup({ setView }) {
               <label className="form-label">Security Question</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <HelpCircle size={18} style={{ position: 'absolute', left: '16px', color: 'var(--slate-400)', zIndex: 1 }} />
-                <select 
-                  value={security} 
+                <select
+                  value={security}
                   onChange={(e) => setSecurity(e.target.value)}
                   className="form-select"
                   style={{ paddingLeft: '44px' }}
@@ -155,11 +158,11 @@ function Signup({ setView }) {
               <label className="form-label">Answer</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <Key size={18} style={{ position: 'absolute', left: '16px', color: 'var(--slate-400)' }} />
-                <input 
-                  type="text" 
-                  value={answer} 
-                  onChange={(e) => setAnswer(e.target.value)} 
-                  required 
+                <input
+                  type="text"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  required
                   placeholder="Enter security answer"
                   className="form-input"
                   style={{ paddingLeft: '44px' }}
@@ -169,8 +172,8 @@ function Signup({ setView }) {
 
             {/* Actions Panel */}
             <div style={{ display: 'flex', gap: '14px', marginTop: '4px' }}>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setView('login')}
                 className="btn btn-secondary"
                 style={{ flex: 1, gap: '6px' }}
@@ -178,8 +181,8 @@ function Signup({ setView }) {
                 <ArrowLeft size={16} />
                 BACK
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="btn btn-primary"
                 style={{ flex: 1.5, gap: '6px' }}
