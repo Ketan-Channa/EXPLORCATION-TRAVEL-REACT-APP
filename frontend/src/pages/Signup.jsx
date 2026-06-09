@@ -20,7 +20,7 @@ function Signup({ setView }) {
     }
 
     setLoading(true);
-    const payload = { username, name, password, security_question: security, answer };
+    const payload = { username, name, password, security, answer };
 
     // Dynamically uses your Vercel Environment Variable, falling back to localhost for local testing
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
