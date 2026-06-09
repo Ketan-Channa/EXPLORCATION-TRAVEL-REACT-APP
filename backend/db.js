@@ -14,14 +14,29 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-// Structural diagnostic test connection to ensure MySQL is running seamlessly on port 3306
+// Structural diagnostic test connection and table setup
 (async () => {
     try {
         const connection = await pool.getConnection();
         console.log("Database connection pool established successfully.");
+
+        // Auto-create account table if it doesn't exist
+        const createTableQuery = `
+            CREATE TABLE IF NOT EXISTS account (
+                username VARCHAR(255) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                security_question VARCHAR(255) NOT NULL,
+                answer VARCHAR(255) NOT NULL
+            );
+        `;
+
+        await connection.query(createTableQuery);
+        console.log("Database tables verified/created successfully.");
+
         connection.release();
     } catch (error) {
-        console.error("Database connection initialization failed:", error.message);
+        console.error("Database connection or initialization failed:", error.message);
     }
 })();
 
